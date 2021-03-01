@@ -41,6 +41,6 @@ Variables = pd.read_csv(root , sep = ",")
 Variables = Variables.rename(columns = {'variable': 'Variable'})
 table = table.merge(Variables, how = 'inner', on = 'Variable')
 #We create a new column ['Longitudinal] which return yes if the number of rows is different from the number of id and no in other case.
-table1['Longitudinal'] = ["No" if table1['# of rows'].iloc[i] == table1['# of different id'].iloc[i] else 'Yes' for i in range(table1.shape[0])]
+table['Longitudinal'] = ["No" if table1['# of rows'].iloc[i] == table1['# of different id'].iloc[i] else 'Yes' for i in range(table1.shape[0])]
 #Lately we export the table into a csv file.
 table.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/variables_recuento.csv", index=False)
