@@ -11,11 +11,11 @@ for x in ['FoxInsight (1)', 'FoxInsightPreproc','FoxInsightValues (1)','FoxInsig
     onlyfiles.remove(x)
 #We create a function in order to create the table where we show the descriptive analysis of the dataset's variables
 #The input of the function is the file csv and the output is the row of a table which contains the name of variable, number of rows, numbers of different id and missing values
-def fill_table(file):
+def fill_table(field):
     
-    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/" + file + ".csv"
+    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/" + field + ".csv"
     df1 = pd.read_csv(root , sep = ",")
-    df = pd.DataFrame(columns=['Variable', '# of rows', '# of different id', '# missing values'])
+    df = pd.DataFrame(columns=['Variable', '# of rows', '# of different id', '# missing values', 'name of table'])
     lst = list(df.columns)
     col1 = []
     col3 = []
@@ -26,8 +26,9 @@ def fill_table(file):
     df[lst[2]] = len(df1['fox_insight_id'].unique())
     [col3.append(df1[x].isna().sum()) for x in list(df1.columns)]
     df[lst[3]] = col3
+    df[lst[4]] = field
     return df
-table = tab
+
 #We file the table up with the variables
 for x in onlyfiles:
     table = table.append(fill_table(x))
@@ -38,8 +39,8 @@ root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + field + ".csv"
 Variables = pd.read_csv(root , sep = ",")
 #We rename one of the columns in order to make a merge between Variables and the table that we create.
 Variables = Variables.rename(columns = {'variable': 'Variable'})
-table1 = table1.merge(Variables, how = 'inner', on = 'Variable')
+table = table.merge(Variables, how = 'inner', on = 'Variable')
 #We create a new column ['Longitudinal] which return yes if the number of rows is different from the number of id and no in other case.
 table1['Longitudinal'] = ["No" if table1['# of rows'].iloc[i] == table1['# of different id'].iloc[i] else 'Yes' for i in range(table1.shape[0])]
 #Lately we export the table into a csv file.
-table1.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/variables_recuento.csv", index=False)
+table.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/variables_recuento.csv", index=False)
