@@ -1,0 +1,19 @@
+import pandas as pd
+import math
+pd.set_option('display.max_colwidth', -1)
+#El objetivo de esta parte es crear una tabla donde podamos recoger los datos relacionados con el paciente que no son de tipo longitudinal.
+#Vamos a empezar importando el conjunto de datos demográficos de los pacientes, así como sus datos genéticos.
+df = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/AD_variable.csv" , sep = ",")
+##############################################################Users########################################################################
+Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/Users.csv" , sep = ",")
+#Eliminamos la vriable LocCounty al ser una variable que no es significativa.
+Users = Users.drop (['LocCounty'], axis = 1)
+
+#Cambiamos los valores nulos que aparecen en las variables que sólo se contesta si tiene Parkinson por -1.
+Users['YearsWithPD'] = [-1  if (math.isnan(Users['YearsWithPD'].iloc[x]) == True) & (Users['InitPDDiag'].iloc[x] == 0)   else x for x in range(Users.shape[0])]
+Users['InitPDDiagAge'] = [-1  if (math.isnan(Users['InitPDDiagAge'].iloc[x]) == True) & (Users['InitPDDiag'].iloc[x] == 0)   else x for x in range(Users.shape[0])]
+#Cómo podemos ver en la tabla de data variables, la mayoría de las variables aunque son categóricas no tienen type categorico, por lo que vamos a transformala en este formato.
+col_cat = list(df['Variable'][(df['name of table'] == 'Users') & (df['# of different values'] < 100 )])
+col_cat.remove('LocCounty')
+for x in col_cat:
+    Users[x] = Users[x].astype('category')
