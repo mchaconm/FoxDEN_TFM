@@ -17,3 +17,45 @@ col_cat = list(df['Variable'][(df['name of table'] == 'Users') & (df['# of diffe
 col_cat.remove('LocCounty')
 for x in col_cat:
     Users[x] = Users[x].astype('category')
+#############################################################Genetic/TablaComodin#######################################################################
+genetic = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/Genetic.csv" , sep = ",")
+#Dado que en la tabla genetic no aparece la edad podría ser interesante unirla a la tabla Users.
+TableComodin = Users.merge(genetic, how = 'left', on = 'fox_insight_id')
+############################################################EXPERIENCES WITH SENSORY MISPERCEPTIONS#####################################################
+esm = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/Experiences_with_Sensory_Misperceptions.csv" , sep = ",")
+#Como podemos ver más abajo está tabla tiene como fecha de realización la misma que la de Users o unos meses antes por lo que podríamos agregarla 
+#a la tabla comodin con lo que tendríamos una primera toma de contacto del paciente en el estudio.
+#Vamos a hacer una comparación entre las columnas days_elapsed de Users y la de esta tabla.
+proof = Users[['fox_insight_id','age']].merge(esm1[['fox_insight_id', 'age']], how = 'inner', on = 'fox_insight_id')
+proof['dif'] = proof['age_x'] - proof['age_y']
+proof['dif'].max()
+#Como podemos ver del cálculo anterior la diferencia máxima de tiempo entre un paciente y otro es de 8 meses.
+
+#Vamos a borrar las columnas que tengan más de un 90% de missing values.
+col = []
+for x in esm1.columns:
+    if esm1[x].isna().sum() > 4822.2:
+        col.append(x)
+esm1 = esm1.drop(col, axis = 1)
+#Dado que los valores categóricos de las columnas presentan un valor de 1 para si y de 2 para no, en contraposición a las variables categóricas de Users, 
+#vamos a normalizar dichas variables para que sean como las de Users.
+col2 = []
+for x in esm1.columns:
+    if len(esm1[x].unique()) == 2 :
+        col2.append(x)
+for y in col2:
+    esm1[y] = [0  if esm1[y].iloc[x] == 2 else 1 for x in range(len(esm1[x])) ]
+col3 = []
+for x in esm1.columns:
+    if (len(esm1[x].unique()) < 10):
+        esm1[x] = esm1[x].astype('category')
+#Vamos ahora a añadir el sufijo esm1 a las columnas de esta tabla para saber en un futuro que no estamos refiriendo a estas.
+col_esm1 = list(esm1.columns)
+col_esm1.remove('fox_insight_id')
+for x in range(len(col_esm1)):
+    col_esm1[x] = col_esm1[x] + 'esm1'
+col_esm1 = ['fox_insight_id'] + col_esm1
+b = dict(zip(list(esm1.columns), col_esm1))
+TableComodin = TableComodin.merge(esm1, how = 'left', on = 'fox_insight_id')
+#Finalmente, introducimos las columnas en nuestra TablaComodin.
+TableComodin = TableComodin.merge(esm1, how = 'left', on = 'fox_insight_id')
