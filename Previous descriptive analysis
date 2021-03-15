@@ -1,51 +1,81 @@
-#Import the libraries that we need
+###########################################################
+# Importacion de los modulos a emplear
+###########################################################
+
 import pandas as pd
 from os import listdir
 from os.path import isfile, join
-#We define the directory where our files are and we put these files into a list
+
+
+#######################################################################################################
+# Definimos el módulo de trabajo y guardamos los archivos de la carpeta, que son las tablas de FOXDen
+#######################################################################################################
+
 mypath = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables"
 onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
 onlyfiles = [f.replace('.csv', '') for f in onlyfiles]
-#We remove in the list onlyfiles the files we don't contains variables 
+#################################################################
+# Eliminamos las tablas que no son las variables de FOXDen en sí.
+#################################################################
+
 for x in ['FoxInsight (1)', 'FoxInsightPreproc','FoxInsightValues (1)','FoxInsightValues','FoxInsightVariables', 'AboutYouValues', 'AboutYouVariables']:
     onlyfiles.remove(x)
-#We create a function in order to create the table where we show the descriptive analysis of the dataset's variables
-#The input of the function is the file csv and the output is the row of a table which contains the name of variable, number of rows, numbers of different id and missing values
-def fill_table(field):
+#####################################################################################################################################################################
+# Creamos una función que para cada variable extraerá distintas características que necesitamos de cara a evaluar las variables más importantes para nuestro estudio.
+#####################################################################################################################################################################
+
+def fill_table(field, folder):
+
+#Importación de las distintas tablas en formato .csv y conversión a un DataFrame para su manipulación.
     
     root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/" + field + ".csv"
+    Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/Users.csv" , sep = ",")
     df1 = pd.read_csv(root , sep = ",")
-    df = pd.DataFrame(columns=['Variable', '# of rows', '# of different id', '# missing values', 'name of table', '# of different values', 'dtype'])
-    lst = list(df.columns)
-    col1 = []
-    col3 = []
-    [col1.append(x) for x in list(df1.columns)]
-    col4 = []
-    df[lst[0]] = col1
-    df[lst[1]] = df1.shape[0]
-    df[lst[2]] = len(df1['fox_insight_id'].unique())
-    [col3.append(df1[x].isna().sum()) for x in list(df1.columns)]
-    df[lst[3]] = col3
-    df[lst[4]] = field
-    [col4.append(len(df1[x][df1[x].notna()].unique())) for x in df1.columns]
-    df[lst[5]] = col4
-    col5 = []
-    [col5.append(x) for x in df1.dtypes.to_frame().reset_index()[0]]
-    df[lst[6]] = col5
+    if field != 'Users':
+        df1 = df1.merge(Users[['fox_insight_id', 'InitPDDiag', 'YearsWithPD']], how = 'inner', on = 'fox_insight_id')
+    df = pd.DataFrame(columns=['Variable', 'Number of rows', 'Number of different id', 'Number of NaN', 'Number of different values', 'Number of PD', 'Number of EarlyPD', 
+                               'Number of MidPD', 'Number of LatePD', 'Name of table', 'dtype'])
+    df['Variable'] = list(df1.columns)
+    df['Number of rows'] = df1.shape[0]
+    df['Number of different id'] = len(df1['fox_insight_id'].unique())
+    num_nan = []
+    [num_nan.append(df1[x].isna().sum()) for x in list(df1.columns)]
+    df['Number of NaN'] = num_nan
+    df['Number of different values'] = [len(df1[x][df1[x].notna()].unique()) for x in df1.columns]
+    df['Number of PD'] = len(df1['fox_insight_id'][df1['InitPDDiag'] == 1].unique())
+    df['Number of EarlyPD'] = len(df1['fox_insight_id'][df1['YearsWithPD'] == 0].unique())
+    df['Number of MidPD'] = len(df1['fox_insight_id'][df1['YearsWithPD'] == 1].unique())
+    df['Number of LatePD'] = len(df1['fox_insight_id'][df1['YearsWithPD'] == 2].unique())
+    df['Name of table'] = field
+    df['dtype'] = [x for x in df1.dtypes.to_frame().reset_index()[0]]
+    
     return df
+##########################################################################################
+#Para cada tabla le aplicamos la función y lo guardamos en una tabla que llamaremos table.
+##########################################################################################
 
-#We file the table up with the variables
+
 for x in onlyfiles:
     table = table.append(fill_table(x))
-#Now we load the file FoxInsightVariables, which contains a description of the variables and the category where these values belong to. 
-file = 'FoxInsightVariables (1)'
 
-root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + field + ".csv"
-Variables = pd.read_csv(root , sep = ",")
-#We rename one of the columns in order to make a merge between Variables and the table that we create.
-Variables = Variables.rename(columns = {'variable': 'Variable'})
-table = table.merge(Variables, how = 'inner', on = 'Variable')
-#We create a new column ['Longitudinal] which return yes if the number of rows is different from the number of id and no in other case.
-table['Longitudinal'] = ["No" if table1['# of rows'].iloc[i] == table1['# of different id'].iloc[i] else 'Yes' for i in range(table1.shape[0])]
-#Lately we export the table into a csv file.
-table.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/variables_recuento.csv", index=False)
+
+####################################################################################################################################
+#Creamos la siguiente función a la que le pasamos una tabla y la carpeta donde queremos guardar la tabla con el resumen descriptivo 
+####################################################################################################################################
+
+def preproc(table, folder):
+
+#Cargamos la tabla FoxInsightVariables que contiene una descripción de cada columna de las distintas tablas.
+    field = 'FoxInsightVariables (1)'
+    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + field + ".csv"
+    Variables = pd.read_csv(root , sep = ",")
+    Variables = Variables.rename(columns = {'variable': 'Variable'})
+    
+#Unimos la tabla que acabamos de importar a la tabla que hemos creado antes.
+    table = table.merge(Variables, how = 'inner', on = 'Variable')
+#Creamos una variable que será longitudinal que nos dirá si dicha columna es del tipo longitudinal o no.
+    table['Longitudinal'] = ["No" if table['Number of rows'].iloc[i] == table['Number of different id'].iloc[i] else 'Yes' for i in range(table.shape[0])]
+#Finalmente exportamos la tabla en formato csv a una de las siguientes carpetas.
+    table.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/AD_variable.csv", index=False)
+
+
