@@ -1,0 +1,164 @@
+########################################################## INFORMACIÓN GENERAL ############################################
+#
+# TRABAJO FINAL DE MÁSTER
+#
+# ANALYSIS OF PATIENT-REPORTED OUTCOMES FROM FOX INSIGHT
+#
+# Autor: 
+#   - Miguel Chacón Maldonado
+#
+# Tutores del proyecto:
+#   - Miguel Valencia Ustárroz
+#   - Iván Cordon Medrano
+# 
+# Universidad de Navarra - Sede de Postgrado
+# 
+# Máster en Big Data Science
+#
+# Entidades colaboradoras:
+#   - Centro de Investigación Médica Aplicada (CIMA)
+#   - Instituto de Ciencia de los Datos e Inteligencia Artificial (DATAI)
+########################################################## RESUMEN DEL TRABAJO ###########################################
+#
+# In this part of the project, we explore the data by creating a descriptive table, where we collect the most useful
+# aspects for our study. Also, we develop a function to delete the variables with a high number of missing values by using
+# our descriptive table. 
+#
+##########################################################################################################################     
+# Steps for the execution of the program: 
+# 1. Importing the modules.
+# 2. Creation of the descriptive table.
+#   2.1. Reading the names of files.
+#   2.2. Implementation of the function fill_table.
+#   2.3. Implementation of the function preproc.
+#   2.4. Delete the variables with a determined percent of missing values.
+##########################################################################################################################     
+
+
+
+##########################################################################################################################     
+# Import the modules 
+##########################################################################################################################     
+print('1. Importing the modules.')
+import pandas as pd
+from os import listdir
+from os.path import isfile, join
+##########################################################################################################################     
+# Reading the name of files
+##########################################################################################################################     
+print('\n2. Creation of the descriptive table.')
+
+print('\n  2.1. Reading the names of files.')
+mypath = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables"
+onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+onlyfiles = [f.replace('.csv', '') for f in onlyfiles]
+
+##########################################################################################################################     
+# Implementation of a function to obtain the columns
+##########################################################################################################################     
+
+print('\n  2.2. Implementation of the function fill_table.')
+
+# This function provides a DataFrame with the most important aspect of our dataset. Here, you can see the list of variables:
+# - Variable: This column represents the name of the column.
+# - Number of rows: This column represent the umber of rows of the column. The number is the same for all variables of a
+# same table.
+# - Number of different id: This variable represents the number of different's ids that Variable has in a table.
+# - Number of NaN: This variable represents the number of the missing values which there are in each column.
+# - Number of different values: This column represents the number of different values which are in each column.
+# - Number of PD: This column represents the number of Patients with Parkinson (PwP), we calculate this number by using 
+# the fox_insight_id and the table Users.
+# - Number of EarlyPD: This column represents the number of PwP who have the disease for a period less than 3 years, 
+# we calculate this number by using the fox_insight_id and the table Users.
+# - Number of MidPD: This column represents the number of PwP who have the disease for a period between 3 years and 10 years, 
+# we calculate this number by using the fox_insight_id and the table Users.
+# - Number of LatePD: This column represents the number of PwP who have the disease for a period more than 10 years, 
+# we calculate this number by using the fox_insight_id and the table Users.
+# - Name of table: This column represents the name of table where the column belongs.
+# - dtype: This column represents the type of variable.
+
+def fill_table(field):
+# We start to obtain the root where the table is and also we import the table Users.
+    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables limpiadas/" + field + ".csv"
+    Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/Users.csv" , sep = ",")
+# We create a DataFrame with the information of the 'root'.
+    df1 = pd.read_csv(root , sep = ",")
+# We define the names and positions of the columns of our descriptive table.    
+    df = pd.DataFrame(columns=['Variable', 'Number of rows', 'Number of different id', 'Number of NaN', 
+                    'Number of different values', 'Number of PD', 'Number of EarlyPD', 
+                               'Number of MidPD', 'Number of LatePD', 'Name of table', 'dtype'])
+# We fill the columns of our table.
+    df['Variable'] = list(df1.columns)
+    df['Number of rows'] = df1.shape[0]
+    df['Number of different id'] = len(df1['fox_insight_id'].unique())
+    num_nan = []
+    [num_nan.append(df1[x].isna().sum()) for x in list(df1.columns)]
+    df['Number of NaN'] = num_nan
+# We only want to save the values that they are not NaN.
+    df['Number of different values'] = [len(df1[x][df1[x].notna()].unique()) for x in df1.columns]
+    df['Name of table'] = field
+    df['dtype'] = [x for x in df1.dtypes.to_frame().reset_index()[0]]
+# Finally we merge the table of Users with df1 in order to fill the columns related to PD.
+    if field != 'Users':
+        df1 = df1.merge(Users[['fox_insight_id', 'InitPDDiag', 'YearsWithPD']], how = 'inner', on = 'fox_insight_id')
+    df['Number of PD'] = len(df1['fox_insight_id'][df1['InitPDDiag'] == 1].unique())
+    df['Number of EarlyPD'] = len(df1['fox_insight_id'][df1['YearsWithPD'] == 0].unique())
+    df['Number of MidPD'] = len(df1['fox_insight_id'][df1['YearsWithPD'] == 1].unique())
+    df['Number of LatePD'] = len(df1['fox_insight_id'][df1['YearsWithPD'] == 2].unique())
+# We delete the duplicates and return our descriptive table.  
+    df = df.drop_duplicates()
+    return df
+
+# We create a table whose columns have the same name of our descriptive table and we fill up this table by using a loop which 
+# goes through the name of tables.
+table_des = pd.DataFrame(columns = ['Variable', 'Number of rows', 'Number of different id', 'Number of NaN', 'Number of different values', 'Number of PD', 'Number of EarlyPD', 
+                               'Number of MidPD', 'Number of LatePD', 'Name of table', 'dtype'] )
+for x in onlyfiles:
+    table_des = table_des.append(fill_table(x))
+    
+##########################################################################################################################     
+# Implementation of a function to add another columns with our descriptive table and import it into csv
+##########################################################################################################################     
+
+print('\n  2.3. Implementation of the function preproc.')
+def preproc(table, folder):
+    field = 'FoxInsightVariables (1)'
+    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + field + ".csv"
+    Variables = pd.read_csv(root , sep = ",")
+    Variables = Variables.rename(columns = {'variable': 'Variable'})
+    table = table.merge(Variables, how = 'inner', on = 'Variable')
+    table = table.drop_duplicates()
+    # The column Longitudinal report us if a table has for the same pacient different rows thoughout the time 
+    table['Longitudinal'] = ["No" if table['Number of rows'].iloc[i] == table['Number of different id'].iloc[i] else 'Yes' for i in range(table.shape[0])]
+    # We delete the User's variables which are added before
+    table = table.drop(table[(table['Name of table'] != 'Users') & ((table['Variable'] == 'InitPDDiag') | (table['Variable'] == 'YearsWithPD'))].index)      
+    table.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/Análisis descriptivo y explotario de las variables.csv", index=False)
+ 
+ #Apply the function to our table and we select the folder in our computer.
+ preproc(table_des, 'Variables limpiadas')
+ 
+ ##########################################################################################################################     
+# Implementation of a function to add another columns with our descriptive table and import it into csv
+##########################################################################################################################
+
+print('\n  2.4. Delete the variables with a determined percent of missing values.')
+
+#The purpose is this part is to delete the columns of the different tables which have a high number of missing values by
+#implementing a function which deletes these columns.
+
+# We import the descriptive table created in the parts 2.2 and 2.3
+AD =  pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables limpiadas/Análisis descriptivo y explotario de las variables.csv" , sep = ",")
+
+def delete_columns(perc):
+    #Importamos la tabla que queremos borrar 
+    for y in AD['Name of table'].unique():
+        cond1 = AD['Name of table'] == y
+        root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/" + y + ".csv"
+        df = pd.read_csv(root , sep = ",")
+        for x in list(AD['Variable'][cond1].unique()):
+            cond2 = AD['Variable'] == x
+            if float(AD['Number of NaN'][cond1 & cond2]/AD['Number of rows'][cond1 & cond2])>=0.9:
+                df = df.drop(x, axis = 1)
+        df.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables limpiadas/"+ y + ".csv", index=False)
+
+        
