@@ -27,11 +27,19 @@
 ##########################################################################################################################     
 # Steps for the execution of the program: 
 # 1. Importing the modules.
-# 2. Creation of the descriptive table. 
-#   2.1. Implementation of the function fill_table.
-#   2.2. Implementation of the function preproc.
-# 3. Preprocessing and cleaning the data.
+# 2. Creation of the descriptive table.
+#   
+#   2.1. Reading the files.   
+#
+#   2.2. Create the descriptive analysis table.
+#
+#   2.3. Implementation of the function preproc.
+#
+#
+# 3. Cleaning and preproccesing data. 
+#
 #   3.1. Delete the variables with a determined percent of missing values.
+#
 #   3.2. Transform categorical data.
 ##########################################################################################################################     
 
@@ -48,13 +56,27 @@ from os.path import isfile, join
 ##########################################################################################################################     
 print('2. Creation of the descriptive table.')
 
+##########################################################################################################################     
+# Reading the files 
+########################################################################################################################## 
 
+print('\n  2.1. Reading the files.')
 
+#This function is to obtain the names of the root 'mypath'
+
+def reading_files(mypath):
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    onlyfiles = [f.replace('.csv', '') for f in onlyfiles]
+    return onlyfiles
+
+mypath = 'C:/Users/miguelico/Google Drive/master/TFM/Data/Variables'
+files = reading_files(mypath)
 ##########################################################################################################################     
 # Implementation of a function to obtain the columns
 ##########################################################################################################################     
 
-print('\n  2.1. Implementation of the function fill_table.')
+
+print('\n  2.2. Create the descriptive analysis table.')
 
 # This function provides a DataFrame with the most important aspect of our dataset. Here, you can see the list of variables:
 # - Variable: This column represents the name of the column.
@@ -74,14 +96,10 @@ print('\n  2.1. Implementation of the function fill_table.')
 # - Name of table: This column represents the name of table where the column belongs.
 # - dtype: This column represents the type of variable.
 
-def fill_table(field, folder):
-# Reading the name of files    
-    mypath = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder
-    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-    onlyfiles = [f.replace('.csv', '') for f in onlyfiles]
-# We start to obtain the root where the table is and also we import the table Users.
-    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/" + field + ".csv"
-    Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/Users.csv" , sep = ",")
+def create_table(field, folder):
+
+    root = folder + "/" + field + ".csv"
+    Users = pd.read_csv(folder + "/Users.csv" , sep = ",")
 # We create a DataFrame with the information of the 'root'.
     df1 = pd.read_csv(root , sep = ",")
 # We define the names and positions of the columns of our descriptive table.    
@@ -110,12 +128,8 @@ def fill_table(field, folder):
     df = df.drop_duplicates()
     return df
 
-# We create a table whose columns have the same name of our descriptive table and we fill up this table by using a loop which 
-# goes through the name of tables.
-table_des = pd.DataFrame(columns = ['Variable', 'Number of rows', 'Number of different id', 'Number of NaN', 'Number of different values', 'Number of PD', 'Number of EarlyPD', 
-                               'Number of MidPD', 'Number of LatePD', 'Name of table', 'dtype'] )
-for x in onlyfiles:
-    table_des = table_des.append(fill_table(x))
+
+
     
 ##########################################################################################################################     
 # Implementation of a function to add another columns with our descriptive table and import it into csv
@@ -133,10 +147,10 @@ def preproc(table, folder):
     table['Longitudinal'] = ["No" if table['Number of rows'].iloc[i] == table['Number of different id'].iloc[i] else 'Yes' for i in range(table.shape[0])]
     # We delete the User's variables which are added before
     table = table.drop(table[(table['Name of table'] != 'Users') & ((table['Variable'] == 'InitPDDiag') | (table['Variable'] == 'YearsWithPD'))].index)      
-    table.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/Análisis descriptivo y explotario de las variables.csv", index=False)
- 
+    table.to_csv(folder + "/Análisis descriptivo y explotario de las variables.csv", index=False)
+    return table
  #Apply the function to our table and we select the folder in our computer.
- preproc(table_des, 'Variables limpiadas')
+AD = preproc(table2, mypath)
 
 ##########################################################################################################################     
 # Preproccesing and cleaning the data.
@@ -148,19 +162,19 @@ print('\n  3.1. Delete the variables with a determined percent of missing values
 #The purpose is this part is to delete the columns of the different tables which have a high number of missing values by
 #implementing a function which deletes these columns.
 
-# We import the descriptive table created in the parts 2.2 and 2.3
-AD =  pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables limpiadas/Análisis descriptivo y explotario de las variables.csv" , sep = ",")
 
-def delete_columns(perc):
+
+def delete_columns(folder_input, folder_output, perc):
     #Importamos la tabla que queremos borrar 
     for y in AD['Name of table'].unique():
         cond1 = AD['Name of table'] == y
-        root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/" + y + ".csv"
+        root = folder_input + "/" + y + ".csv"
         df = pd.read_csv(root , sep = ",")
         for x in list(AD['Variable'][cond1].unique()):
             cond2 = AD['Variable'] == x
             if float(AD['Number of NaN'][cond1 & cond2]/AD['Number of rows'][cond1 & cond2])>=0.9:
+            
                 df = df.drop(x, axis = 1)
-        df.to_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables limpiadas/"+ y + ".csv", index=False)
+        df.to_csv(folder_output + "/"+ y + ".csv", index=False)
 
         
