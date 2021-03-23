@@ -77,10 +77,10 @@ print('\n  2.2. Implementation of the function fill_table.')
 # - Name of table: This column represents the name of table where the column belongs.
 # - dtype: This column represents the type of variable.
 
-def fill_table(field):
+def fill_table(field, folder):
 # We start to obtain the root where the table is and also we import the table Users.
-    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables limpiadas/" + field + ".csv"
-    Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/Variables/Users.csv" , sep = ",")
+    root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/" + field + ".csv"
+    Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/Users.csv" , sep = ",")
 # We create a DataFrame with the information of the 'root'.
     df1 = pd.read_csv(root , sep = ",")
 # We define the names and positions of the columns of our descriptive table.    
