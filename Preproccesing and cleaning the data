@@ -27,11 +27,12 @@
 ##########################################################################################################################     
 # Steps for the execution of the program: 
 # 1. Importing the modules.
-# 2. Creation of the descriptive table.
-#   2.1. Reading the names of files.
-#   2.2. Implementation of the function fill_table.
-#   2.3. Implementation of the function preproc.
-#   2.4. Delete the variables with a determined percent of missing values.
+# 2. Creation of the descriptive table. 
+#   2.1. Implementation of the function fill_table.
+#   2.2. Implementation of the function preproc.
+# 3. Preprocessing and cleaning the data.
+#   3.1. Delete the variables with a determined percent of missing values.
+#   3.2. Transform categorical data.
 ##########################################################################################################################     
 
 
@@ -43,21 +44,17 @@ print('1. Importing the modules.')
 import pandas as pd
 from os import listdir
 from os.path import isfile, join
-##########################################################################################################################     
-# Reading the name of files
-##########################################################################################################################     
-print('\n2. Creation of the descriptive table.')
 
-print('\n  2.1. Reading the names of files.')
-mypath = "C:/Users/miguelico/Google Drive/master/TFM/Data/Variables"
-onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
-onlyfiles = [f.replace('.csv', '') for f in onlyfiles]
+##########################################################################################################################     
+print('2. Creation of the descriptive table.')
+
+
 
 ##########################################################################################################################     
 # Implementation of a function to obtain the columns
 ##########################################################################################################################     
 
-print('\n  2.2. Implementation of the function fill_table.')
+print('\n  2.1. Implementation of the function fill_table.')
 
 # This function provides a DataFrame with the most important aspect of our dataset. Here, you can see the list of variables:
 # - Variable: This column represents the name of the column.
@@ -78,6 +75,10 @@ print('\n  2.2. Implementation of the function fill_table.')
 # - dtype: This column represents the type of variable.
 
 def fill_table(field, folder):
+# Reading the name of files    
+    mypath = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder
+    onlyfiles = [f for f in listdir(mypath) if isfile(join(mypath, f))]
+    onlyfiles = [f.replace('.csv', '') for f in onlyfiles]
 # We start to obtain the root where the table is and also we import the table Users.
     root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/" + field + ".csv"
     Users = pd.read_csv("C:/Users/miguelico/Google Drive/master/TFM/Data/" + folder + "/Users.csv" , sep = ",")
@@ -120,7 +121,7 @@ for x in onlyfiles:
 # Implementation of a function to add another columns with our descriptive table and import it into csv
 ##########################################################################################################################     
 
-print('\n  2.3. Implementation of the function preproc.')
+print('\n  2.2. Implementation of the function preproc.')
 def preproc(table, folder):
     field = 'FoxInsightVariables (1)'
     root = "C:/Users/miguelico/Google Drive/master/TFM/Data/" + field + ".csv"
@@ -136,12 +137,13 @@ def preproc(table, folder):
  
  #Apply the function to our table and we select the folder in our computer.
  preproc(table_des, 'Variables limpiadas')
- 
- ##########################################################################################################################     
-# Implementation of a function to add another columns with our descriptive table and import it into csv
-##########################################################################################################################
 
-print('\n  2.4. Delete the variables with a determined percent of missing values.')
+##########################################################################################################################     
+# Preproccesing and cleaning the data.
+########################################################################################################################## 
+print('3. Preprocessing and cleaning the data.')
+
+print('\n  3.1. Delete the variables with a determined percent of missing values.')
 
 #The purpose is this part is to delete the columns of the different tables which have a high number of missing values by
 #implementing a function which deletes these columns.
